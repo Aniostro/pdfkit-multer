@@ -13,7 +13,7 @@ app.use(express.static('public'));
 
 app.get('/',(req, res) => {
     res.sendFile(__dirname + '/index.html')
-  })
+});
 
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
@@ -26,18 +26,30 @@ const storage = multer.diskStorage({
 
 const upload = multer({ storage });
 
-app.post('/upload', upload.single('file'), (req, res) => {
+app.post('/upload', upload.fields([
+  { name: 'makerFile', maxCount: 1 }, 
+  { name: 'comakerFile', maxCount: 1 }
+]), (req, res) => {
+  const makerFile = req.files.makerFile[0];
+  const comakerFile = req.files.comakerFile[0];
+
   const doc = new pdfkit();
-  const filePath = 'uploads/' + req.file.originalname;
+  const filePath = 'uploads/' + makerFile.originalname;
+  const comakerfilePath = 'uploads/' + comakerFile.originalname;
+
   const fileContent = fs.readFileSync(filePath);
   doc.pipe(fs.createWriteStream('uploads/output.pdf'));
   doc.image(fileContent, { width: 500 });
+  doc.addPage();
+  doc.image(comakerfilePath, { width: 500 });
+
   doc.end();
-  res.status(200).send('File uploaded!');
+  res.status(200).send('Files uploaded!');
 });
 
 app.listen(3000, () => {
   console.log('Server is running on port http://127.0.0.1:3000');
 });
+
 
 
